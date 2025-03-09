@@ -1,6 +1,6 @@
 import java.util.*;
 
-public class CustomCalculator {
+public class calculator {
     private static double previousAnswer = 0; // Variable to store the previous answer
 
     public static void main(String[] args) {
