@@ -6,7 +6,7 @@ public class calculator {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Welcome to the Custom Calculator!");
-        System.out.println("Enter a mathematical expression or an algebraic equation (e.g., '2x + 5 = 15' or '3x + 5x'): ");
+        System.out.println("Enter a mathematical expression or an algebraic equation (e.g., '2x + 5 = 15', '3x^2 + 5x^2'): ");
         System.out.println("Use 'ans' to refer to the previous answer.");
         System.out.println("Type 'exit' to quit.");
 
@@ -50,9 +50,9 @@ public class calculator {
         scanner.close();
     }
 
-    // Simplify an algebraic expression like "3x + 5x"
+    // Simplify an algebraic expression like "3x^2 + 5x^2"
     private static String simplifyAlgebraicExpression(String expression) {
-        double coefficientX = 0; // Coefficient of x
+        Map<Integer, Double> coefficients = new HashMap<>(); // Key: power, Value: coefficient
         double constantTerm = 0; // Constant term
 
         // Split the expression into terms
@@ -60,15 +60,19 @@ public class calculator {
         for (String term : terms) {
             term = term.trim();
             if (term.contains("x")) {
-                // Extract coefficient of x
-                String coeff = term.replace("x", "").trim();
-                if (coeff.isEmpty() || coeff.equals("+")) {
-                    coefficientX += 1; // Default coefficient is 1
-                } else if (coeff.equals("-")) {
-                    coefficientX -= 1; // Coefficient is -1
-                } else {
-                    coefficientX += Double.parseDouble(coeff);
+                // Extract coefficient and power of x
+                String coeffPart = term.split("x")[0].trim();
+                double coeff = coeffPart.isEmpty() || coeffPart.equals("+") ? 1 :
+                               coeffPart.equals("-") ? -1 : Double.parseDouble(coeffPart);
+
+                int power = 1; // Default power is 1
+                if (term.contains("^")) {
+                    String powerPart = term.split("\\^")[1].trim();
+                    power = Integer.parseInt(powerPart);
                 }
+
+                // Add to coefficients map
+                coefficients.put(power, coefficients.getOrDefault(power, 0.0) + coeff);
             } else {
                 // Constant term
                 constantTerm += Double.parseDouble(term);
@@ -77,15 +81,30 @@ public class calculator {
 
         // Build the simplified expression
         StringBuilder result = new StringBuilder();
-        if (coefficientX != 0) {
-            if (coefficientX == 1) {
+        List<Integer> powers = new ArrayList<>(coefficients.keySet());
+        Collections.sort(powers, Collections.reverseOrder()); // Sort powers in descending order
+
+        for (int power : powers) {
+            double coeff = coefficients.get(power);
+            if (coeff == 0) continue;
+
+            if (result.length() > 0 && coeff > 0) {
+                result.append(" + ");
+            }
+            if (coeff == -1 && power != 0) {
+                result.append("-");
+            } else if (coeff != 1 || power == 0) {
+                result.append(formatNumber(coeff));
+            }
+
+            if (power > 0) {
                 result.append("x");
-            } else if (coefficientX == -1) {
-                result.append("-x");
-            } else {
-                result.append(formatNumber(coefficientX)).append("x");
+                if (power > 1) {
+                    result.append("^").append(power);
+                }
             }
         }
+
         if (constantTerm != 0) {
             if (result.length() > 0 && constantTerm > 0) {
                 result.append(" + ");
@@ -96,47 +115,76 @@ public class calculator {
         return result.length() > 0 ? result.toString() : "0"; // Return "0" if no terms
     }
 
-    // Solve an algebraic equation of the form ax + b = c
+    // Solve an algebraic equation of the form ax^n + bx + c = d
     private static double solveAlgebraicEquation(String equation) {
         // Split the equation into LHS and RHS
         String[] parts = equation.split("=");
         if (parts.length != 2) {
-            throw new IllegalArgumentException("Invalid equation format. Use 'ax + b = c'.");
+            throw new IllegalArgumentException("Invalid equation format. Use 'ax^n + bx + c = d'.");
         }
 
         String lhs = parts[0].trim(); // Left-hand side
         String rhs = parts[1].trim(); // Right-hand side
 
         // Parse coefficients from the LHS
-        double a = 0, b = 0;
+        double a = 0, b = 0, c = 0;
         String[] terms = lhs.split("(?=[+-])"); // Split by '+' or '-'
         for (String term : terms) {
             term = term.trim();
             if (term.contains("x")) {
-                // Extract coefficient of x
-                String coeff = term.replace("x", "").trim();
-                if (coeff.isEmpty() || coeff.equals("+")) {
-                    a += 1; // Default coefficient is 1
-                } else if (coeff.equals("-")) {
-                    a -= 1; // Coefficient is -1
+                // Extract coefficient and power of x
+                String coeffPart = term.split("x")[0].trim();
+                double coeff = coeffPart.isEmpty() || coeffPart.equals("+") ? 1 :
+                               coeffPart.equals("-") ? -1 : Double.parseDouble(coeffPart);
+
+                int power = 1; // Default power is 1
+                if (term.contains("^")) {
+                    String powerPart = term.split("\\^")[1].trim();
+                    power = Integer.parseInt(powerPart);
+                }
+
+                if (power == 1) {
+                    b += coeff; // Linear term
+                } else if (power == 2) {
+                    a += coeff; // Quadratic term
                 } else {
-                    a += Double.parseDouble(coeff);
+                    throw new IllegalArgumentException("Only linear and quadratic equations are supported.");
                 }
             } else {
                 // Constant term
-                b += Double.parseDouble(term);
+                c += Double.parseDouble(term);
             }
         }
 
         // Parse constant from the RHS
-        double c = Double.parseDouble(rhs);
+        double d = Double.parseDouble(rhs);
 
-        // Solve for x: ax + b = c => x = (c - b) / a
+        // Solve for x: ax^2 + bx + c = d => ax^2 + bx + (c - d) = 0
+        double adjustedC = c - d;
+
         if (a == 0) {
-            throw new ArithmeticException("No solution or infinite solutions (a = 0).");
+            // Linear equation: bx + adjustedC = 0
+            if (b == 0) {
+                throw new ArithmeticException("No solution or infinite solutions.");
+            }
+            return -adjustedC / b;
         }
 
-        return (c - b) / a;
+        // Quadratic equation: ax^2 + bx + adjustedC = 0
+        double discriminant = b * b - 4 * a * adjustedC;
+        if (discriminant < 0) {
+            throw new ArithmeticException("No real solutions (discriminant < 0).");
+        }
+
+        double sqrtDiscriminant = Math.sqrt(discriminant);
+        double root1 = (-b + sqrtDiscriminant) / (2 * a);
+        double root2 = (-b - sqrtDiscriminant) / (2 * a);
+
+        if (root1 == root2) {
+            return root1; // Single solution
+        } else {
+            throw new ArithmeticException("Multiple solutions: " + formatNumber(root1) + " and " + formatNumber(root2));
+        }
     }
 
     // Format a number to remove unnecessary decimal points
@@ -176,7 +224,7 @@ public class calculator {
                     numberBuffer.setLength(0); // Clear buffer
                 }
 
-                if (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')') {
+                if (c == '+' || c == '-' || c == '*' || c == '/' || c == '(' || c == ')' || c == '^') {
                     tokens.add(Character.toString(c)); // Add operator or parenthesis
                 } else if (!Character.isWhitespace(c)) {
                     throw new IllegalArgumentException("Unexpected character: " + c);
@@ -199,7 +247,14 @@ public class calculator {
         Map<String, Integer> precedence = Map.of(
             "+", 1, "-", 1,
             "*", 2, "/", 2,
-            "sin", 3, "cos", 3, "tan", 3 // Trigonometric functions have highest precedence
+            "^", 3, // Power operator has highest precedence
+            "sin", 4, "cos", 4, "tan", 4 // Trigonometric functions have highest precedence
+        );
+
+        Map<String, Boolean> associativity = Map.of(
+            "+", true, "-", true,
+            "*", true, "/", true,
+            "^", false // Power operator is right-associative
         );
 
         for (String token : tokens) {
@@ -207,7 +262,8 @@ public class calculator {
                 output.add(token);
             } else if (isOperator(token) || isFunction(token)) { // Operator or function
                 while (!operators.isEmpty() && isOperator(operators.peek()) &&
-                       precedence.get(operators.peek()) >= precedence.get(token)) {
+                       ((associativity.get(token) && precedence.get(operators.peek()) >= precedence.get(token)) ||
+                        (!associativity.get(token) && precedence.get(operators.peek()) > precedence.get(token)))) {
                     output.add(operators.pop()); // Pop higher precedence operators
                 }
                 operators.push(token); // Push current operator/function
@@ -273,7 +329,7 @@ public class calculator {
     }
 
     private static boolean isOperator(String token) {
-        return token.equals("+") || token.equals("-") || token.equals("*") || token.equals("/");
+        return token.equals("+") || token.equals("-") || token.equals("*") || token.equals("/") || token.equals("^");
     }
 
     private static boolean isFunction(String token) {
@@ -288,6 +344,7 @@ public class calculator {
             case "/":
                 if (b == 0) throw new ArithmeticException("Division by zero");
                 return a / b;
+            case "^": return Math.pow(a, b); // Exponentiation
             default:
                 throw new IllegalArgumentException("Unknown operator: " + operator);
         }
