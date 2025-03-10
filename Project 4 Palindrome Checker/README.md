@@ -1,7 +1,7 @@
-# Project Name: BMI Calculator
+# Project Name: Palindrome checker
 
 ## Description
-[Briefly describe what the project is about. Explain its purpose and functionality.]
+Enter a word and the machine checks if its a palindrome.
 
 ## Java Concepts Covered
 - [List the Java concepts this project focuses on, e.g., OOP, data structures, exception handling, etc.]

@@ -9,11 +9,13 @@ Beginner Projects (30 Projects)
     BMI Calculator : Calculate Body Mass Index (BMI) based on user input.
     Palindrome Checker : Check if a given string or number is a palindrome.
     FizzBuzz : Print numbers from 1 to 100, replacing multiples of 3 with "Fizz" and multiples of 5 with "Buzz."
+
     Vowel Counter : Count the number of vowels in a given string.
     Temperature Converter : Convert temperatures between Celsius, Fahrenheit, and Kelvin.
     Factorial Calculator : Calculate the factorial of a number using recursion.
     Fibonacci Series : Generate the Fibonacci sequence up to a given number.
     Prime Number Checker : Check if a number is prime.
+    
     Rock-Paper-Scissors Game : Implement a simple text-based Rock-Paper-Scissors game.
     Password Generator : Generate random passwords with customizable length and complexity.
     Anagram Checker : Check if two strings are anagrams of each other.
